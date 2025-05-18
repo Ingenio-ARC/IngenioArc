@@ -16,6 +16,7 @@ import {
 } from '../../services/chatService';
 import { Bold } from 'iconoir-react';
 import CountdownTimer from './CountdownTimer';
+import { useRouter } from 'next/navigation';
 
 interface Message {
     id: number;
@@ -31,6 +32,7 @@ interface ChatBoxProps {
 
 const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
     const { data: session } = useSession();
+    const router = useRouter();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [chatSessionId, setChatSessionId] = useState<string | null>(null);
@@ -233,6 +235,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
             setMessages([]);
             setChatSessionId(null);
         }
+        router.back(); // Redirect to previous page (chat list)
     };
 
     return (

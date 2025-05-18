@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import NavbarSpeaker from '../../components/NavbarSepaker';
 import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from '@worldcoin/minikit-js';
+import { useTheme } from 'next-themes';
+import { useSession } from 'next-auth/react';
+
 
 interface Plan {
   plan_id: number;
@@ -14,6 +17,8 @@ interface Plan {
 export default function ShowPlan() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const session = useSession();
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -42,7 +47,6 @@ export default function ShowPlan() {
           symbol: Tokens.WLD,
           token_amount: tokenToDecimals(plan.price_plan, Tokens.WLD).toString(),
         },
-        // Puedes agregar más tokens si lo necesitas
       ],
       description: `Pago del plan ${plan.name_plan}`,
     };
@@ -54,6 +58,19 @@ export default function ShowPlan() {
     const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
 
     if (finalPayload.status == 'success') {
+      // Insertar el pago en la base de datos
+      await fetch('/api/insert-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          world_nickname: session?.data?.user?.username,
+          from: finalPayload.from,
+          plan_id: plan.plan_id,
+          timestamp: finalPayload.timestamp,
+          reference: finalPayload.reference,
+        }),
+      });
+
       const res = await fetch(`/api/confirm-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -70,23 +87,38 @@ export default function ShowPlan() {
   return (
   <div className="flex flex-col items-center min-h-screen gap-6 pt-8 pb-20">
     <h1 className="text-3xl font-bold mb-4">Planes disponibles</h1>
-    <div className="w-full max-w-2xl flex flex-col gap-4">
+    <div className={`
+                w-full rounded-xl border-2 p-4 text-lg font-semibold capitalize transition-colors
+                ${resolvedTheme === 'dark'
+                ? 'bg-black text-white border-gray-700 hover:bg-gray-800'
+                : 'bg-white text-black border-gray-200 hover:bg-gray-200'}
+            `}>
       {plans.map(plan => (
         <div
           key={plan.plan_id}
           className="border-2 border-gray-200 rounded-xl p-4 flex flex-col gap-2 bg-white shadow"
         >
-          <h2 className="text-xl font-semibold">{plan.name_plan}</h2>
+          <h2 className={`
+                w-full rounded-xl border-2 p-4 text-lg font-semibold capitalize transition-colors
+                ${resolvedTheme === 'dark'
+                ? 'bg-white text-black border-gray-700 hover:bg-gray-200'
+                : 'bg-black text-white border-gray-200 hover:bg-gray-800'}
+            `}>{plan.name_plan}</h2>
           <span className="text-lg font-bold text-blue-600">${plan.price_plan}</span>
           <span className="text-gray-700">
             Duración: {secondsToHours(plan.duration_plan)} horas
           </span>
           <button
-            className="flex flex-row items-center justify-center gap-4 rounded-xl w-full max-w-md border-2 border-gray-200 p-4 bg-white hover:bg-gray-100 transition-colors"
+            className={`
+                w-full rounded-xl border-2 p-4 text-lg font-semibold capitalize transition-colors
+                ${resolvedTheme === 'dark'
+                ? 'bg-black text-white border-gray-700 hover:bg-gray-800'
+                : 'bg-white text-black border-gray-200 hover:bg-gray-200'}
+            `}
             onClick={() => sendPayment(plan)}
-          >
+            >
             Elegir este plan
-          </button>
+            </button>
         </div>
       ))}
     </div>

@@ -38,35 +38,127 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
         const fetchUserIdAndCreateConversation = async () => {
             if (!session?.user?.username) return;
 
-            const { data: userData, error: userError } = await getUserAndSpeaker(session.user.username);
-            if (userError || !userData) return;
-            const userId = userData.user_id;
-            const speakerId = userData.speakers ? userData.speakers.speaker_id : userData.speakers;
-
-            const { data: otherUserData, error: otherUserError } = await getUserAndListener(chatWith);
-            if (otherUserError || !otherUserData) return;
-            const otherUserId = otherUserData.user_id;
-            const listenerId = otherUserData.listeners ? otherUserData.listeners.listener_id : otherUserData.listeners;
-
-            const { data: existingConv, error: existingConvError } = await getExistingConversation(speakerId, listenerId);
-
-            if (!existingConvError && existingConv) {
-                setChatSessionId(existingConv.conversation_id);
-            } else {
-                const { data: newConv, error: newConvError } = await createConversation(speakerId, listenerId);
-                if (!newConvError && newConv) {
-                    setChatSessionId(newConv.conversation_id);
+            // Primero intentamos obtener el speaker del usuario actual
+            let userData, userError, otherUserData, otherUserError;
+            ({ data: userData, error: userError } = await getUserAndSpeaker(session.user.username));
+            if (!userError && userData && userData.speakers && ((Array.isArray(userData.speakers) && userData.speakers.length > 0) || (!Array.isArray(userData.speakers) && userData.speakers))) {
+                // El usuario actual es speaker
+                ({ data: otherUserData, error: otherUserError } = await getUserAndListener(chatWith));
+                if (otherUserError || !otherUserData) {
+                    console.log('SPEAKER: Error o no se encontró otherUserData', otherUserError, otherUserData);
+                    return;
                 }
-            }
-
-            const { data: speakerData, error: speakerError } = await getSpeakerConversationCount(userId);
-            if (!speakerError && speakerData) {
-                await updateSpeakerConversationCount(userId, speakerData.conversation_count + 1);
-            }
-
-            const { data: listenerData, error: listenerError } = await getListenerConversationCount(otherUserId);
-            if (!listenerError && listenerData) {
-                await updateListenerConversationCount(otherUserId, listenerData.conversation_count + 1);
+                const userId = userData?.user_id;
+                const otherUserId = otherUserData?.user_id;
+                // Always extract the id, not the object, and ensure it's a string (SPEAKER CASE)
+                let speakerId: string | undefined;
+                if (Array.isArray(userData?.speakers) && userData.speakers.length > 0) {
+                    speakerId = String(userData.speakers[0].speaker_id);
+                } else if (userData?.speakers && typeof userData.speakers === 'object' && userData.speakers !== null && 'speaker_id' in userData.speakers) {
+                    speakerId = String(userData.speakers.speaker_id);
+                } else {
+                    speakerId = undefined;
+                }
+                let listenerId: string | undefined;
+                if (Array.isArray(otherUserData?.listeners) && otherUserData.listeners.length > 0) {
+                    listenerId = String(otherUserData.listeners[0].listener_id);
+                } else if (otherUserData?.listeners && typeof otherUserData.listeners === 'object' && otherUserData.listeners !== null && 'listener_id' in otherUserData.listeners) {
+                    listenerId = String(otherUserData.listeners.listener_id);
+                } else {
+                    listenerId = undefined;
+                }
+                if (!speakerId || !listenerId) {
+                    console.log('SPEAKER: No valid speakerId or listenerId', speakerId, listenerId);
+                    return;
+                }
+                const { data: existingConv, error: existingConvError } = await getExistingConversation(speakerId, listenerId);
+                console.log('SPEAKER existingConv:', existingConv);
+                let newConv = null;
+                if (!existingConvError && existingConv) {
+                    setChatSessionId(existingConv.conversation_id);
+                } else {
+                    const result = await createConversation(speakerId, listenerId);
+                    newConv = result.data;
+                    console.log('SPEAKER newConv:', newConv);
+                    if (!result.error && newConv) {
+                        setChatSessionId(newConv.conversation_id);
+                    }
+                }
+                // LOGS PARA SPEAKER
+                console.log('SPEAKER userData:', userData);
+                console.log('SPEAKER otherUserData:', otherUserData);
+                console.log('SPEAKER speakerId:', speakerId);
+                console.log('SPEAKER listenerId:', listenerId);
+                if (otherUserError || !otherUserData) return;
+                const { data: speakerData, error: speakerError } = await getSpeakerConversationCount(speakerId);
+                if (!speakerError && speakerData) {
+                    await updateSpeakerConversationCount(speakerId, speakerData.conversation_count + 1);
+                }
+                const { data: listenerData, error: listenerError } = await getListenerConversationCount(listenerId);
+                if (!listenerError && listenerData) {
+                    await updateListenerConversationCount(listenerId, listenerData.conversation_count + 1);
+                }
+            } else {
+                // El usuario actual es listener
+                ({ data: userData, error: userError } = await getUserAndListener(session.user.username));
+                ({ data: otherUserData, error: otherUserError } = await getUserAndSpeaker(chatWith));
+                if (userError || !userData) {
+                    console.log('LISTENER: Error o no se encontró userData', userError, userData);
+                    return;
+                }
+                if (otherUserError || !otherUserData) {
+                    console.log('LISTENER: Error o no se encontró otherUserData', otherUserError, otherUserData);
+                    return;
+                }
+                // Always extract the id, not the object, and ensure it's a string (LISTENER CASE)
+                let speakerId: string | undefined;
+                if (Array.isArray(otherUserData?.speakers) && otherUserData.speakers.length > 0) {
+                    speakerId = String(otherUserData.speakers[0].speaker_id);
+                } else if (otherUserData?.speakers && typeof otherUserData.speakers === 'object' && otherUserData.speakers !== null && 'speaker_id' in otherUserData.speakers) {
+                    speakerId = String(otherUserData.speakers.speaker_id);
+                } else {
+                    speakerId = undefined;
+                }
+                let listenerId: string | undefined;
+                if (Array.isArray(userData?.listeners) && userData.listeners.length > 0) {
+                    listenerId = String(userData.listeners[0].listener_id);
+                } else if (userData?.listeners && typeof userData.listeners === 'object' && userData.listeners !== null && 'listener_id' in userData.listeners) {
+                    listenerId = String(userData.listeners.listener_id);
+                } else {
+                    listenerId = undefined;
+                }
+                if (!speakerId || !listenerId) {
+                    console.log('LISTENER: No valid speakerId or listenerId', speakerId, listenerId);
+                    return;
+                }
+                const { data: existingConv, error: existingConvError } = await getExistingConversation(speakerId, listenerId);
+                let newConv = null;
+                if (!existingConvError && existingConv) {
+                    setChatSessionId(existingConv.conversation_id);
+                } else {
+                    const result = await createConversation(speakerId, listenerId);
+                    newConv = result.data;
+                    if (!result.error && newConv) {
+                        setChatSessionId(newConv.conversation_id);
+                    }
+                }
+                // LOGS PARA LISTENER
+                console.log('LISTENER userData:', userData);
+                console.log('LISTENER otherUserData:', otherUserData);
+                console.log('LISTENER speakerId:', speakerId);
+                console.log('LISTENER listenerId:', listenerId);
+                console.log('LISTENER existingConv:', existingConv);
+                console.log('LISTENER newConv:', newConv);
+                if (userError || !userData) return;
+                if (otherUserError || !otherUserData) return;
+                const { data: speakerData, error: speakerError } = await getSpeakerConversationCount(speakerId);
+                if (!speakerError && speakerData) {
+                    await updateSpeakerConversationCount(speakerId, speakerData.conversation_count + 1);
+                }
+                const { data: listenerData, error: listenerError } = await getListenerConversationCount(listenerId);
+                if (!listenerError && listenerData) {
+                    await updateListenerConversationCount(listenerId, listenerData.conversation_count + 1);
+                }
             }
         };
         fetchUserIdAndCreateConversation();
@@ -107,7 +199,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
 
     const handleSend = async () => {
         if (input.trim() === '' || !chatSessionId) return;
-        const sender = session?.user?.username || 'me';
+        // Siempre usar el username real como sender
+        const sender = session?.user?.username;
+        if (!sender) return;
         const { error } = await supabase.from('messages').insert([
             {
                 text: input,
@@ -133,7 +227,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
             overflow: 'hidden',
         }}>
             <div style={{ padding: '15px 20px', fontSize: '14px', color: '#555' }}>
-                Estás conversando con: <div style={{ fontWeight: 'bold', display: 'inline-block'}}>{chatWith}</div>
+                Estás conversando con: <div style={{ fontWeight: 'bold', display: 'inline-block' }}>{chatWith}</div>
             </div>
             <div style={{
                 flex: 1,
@@ -148,8 +242,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
                     <div
                         key={msg.id}
                         style={{
-                            alignSelf: (msg.sender === 'me' || msg.sender === session?.user?.username) ? 'flex-end' : 'flex-start',
-                            background: (msg.sender === 'me' || msg.sender === session?.user?.username) ? '#dcf8c6' : '#fff',
+                            alignSelf: (msg.sender === session?.user?.username) ? 'flex-end' : 'flex-start',
+                            background: (msg.sender === session?.user?.username) ? '#dcf8c6' : '#fff',
                             color: '#222',
                             borderRadius: 16,
                             padding: '8px 14px 16px',

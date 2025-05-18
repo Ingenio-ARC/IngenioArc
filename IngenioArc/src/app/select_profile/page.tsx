@@ -1,8 +1,10 @@
 'use client';
 import React from 'react';
 import { AuthSession } from '../../components/AuthSession';
+import { useRouter } from 'next/navigation';
 
 export default function SelectProfile() {
+  const router = useRouter();
   // Función para llamar al backend
   const handleCreateUser = async (role: 'listener' | 'speaker') => {
     const res = await fetch('/api/CreateUser', {
@@ -13,9 +15,15 @@ export default function SelectProfile() {
     const data = await res.json();
     if (data.status === 200) {
       // Aquí puedes redirigir o mostrar un mensaje de éxito
-      alert(`Usuario creado como ${role}`);
+      alert(`Usuario creado`);
+      if (role === 'listener') {
+        router.push('/main_listener');
+      } else if (role === 'speaker') {
+        router.push('/main_speaker');
+      }
     } else {
       alert(data.error || 'Error al crear usuario');
+
     }
   };
   return (
@@ -43,7 +51,7 @@ export default function SelectProfile() {
         className="flex flex-row items-center justify-center gap-4 rounded-xl w-full max-w-md border-2 border-gray-200 p-4 bg-white hover:bg-gray-100 transition-colors"
         onClick={() => handleCreateUser('listener')}
       >
-        <span className="text-lg font-semibold capitalize">Listener</span>
+        <span className="text-lg font-semibold capitalize">Confidente</span>
       </button>
 
       {/* Botón Speaker */}
@@ -51,7 +59,7 @@ export default function SelectProfile() {
         className="flex flex-row items-center justify-center gap-4 rounded-xl w-full max-w-md border-2 border-gray-200 p-4 bg-white hover:bg-gray-100 transition-colors"
         onClick={() => handleCreateUser('speaker')}
       >
-        <span className="text-lg font-semibold capitalize">Speaker</span>
+        <span className="text-lg font-semibold capitalize">Anónimo</span>
       </button>
     </div>
   );

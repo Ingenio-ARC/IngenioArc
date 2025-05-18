@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import NavbarSpeaker from '../../components/NavbarSepaker';
+import NavbarSpeaker from '../../components/NavbarSpeaker';
 import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from '@worldcoin/minikit-js';
 import { useTheme } from 'next-themes';
 import { useSession } from 'next-auth/react';

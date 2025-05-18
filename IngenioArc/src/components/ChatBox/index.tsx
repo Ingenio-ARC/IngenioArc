@@ -246,16 +246,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
                             background: (msg.sender === session?.user?.username) ? '#dcf8c6' : '#fff',
                             color: '#222',
                             borderRadius: 16,
-                            padding: '8px 14px',
+                            padding: '8px 14px 16px',
                             maxWidth: '75%',
+                            minWidth: 70,
                             boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                             fontSize: 15,
                             position: 'relative',
+                            wordBreak: 'break-word', // Ensures long words wrap
                         }}
                     >
                         {msg.text}
                         <span style={{
-                            fontSize: 11,
+                            fontSize: 10,
                             color: '#888',
                             marginLeft: 8,
                             position: 'absolute',

@@ -12,6 +12,7 @@ import {
     getListenerConversationCount,
     updateListenerConversationCount,
 } from '../../services/chatService';
+import { Bold } from 'iconoir-react';
 
 interface Message {
     id: number;
@@ -122,14 +123,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
         <div style={{
             display: 'flex',
             flexDirection: 'column',
-            height: 400,
-            width: 350,
+            height: 'calc(100vh - 0px)',
+            width: '100%',
+            margin: '0 auto auto',
             border: '1px solid #ddd',
-            borderRadius: 12,
+            borderRadius: '12px, 12px, 0, 0',
             background: '#fff',
             boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
             overflow: 'hidden',
         }}>
+            <div style={{ padding: '15px 20px', fontSize: '14px', color: '#555' }}>
+                Estás conversando con: <div style={{ fontWeight: 'bold', display: 'inline-block'}}>{chatWith}</div>
+            </div>
             <div style={{
                 flex: 1,
                 overflowY: 'auto',
@@ -213,9 +218,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
                     Send
                 </button>
             </form>
-            <div style={{ padding: '10px', fontSize: '14px', color: '#555' }}>
-                Chatting with: {chatWith}
-            </div>
         </div>
     );
 };

@@ -1,10 +1,7 @@
 'use client';
-import { walletAuth } from '@/auth/wallet';
-import { Button, TextArea, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
-import { useMiniKit } from '@worldcoin/minikit-js/minikit-provider';
-import { useCallback, useEffect, useState } from 'react';
+import { Marble, CircularIcon } from '@worldcoin/mini-apps-ui-kit-react';
+import { CheckCircleSolid } from 'iconoir-react';
 import { useSession } from 'next-auth/react';
-import { Label } from 'iconoir-react';
 
 /**
  * This component is an example of how to authenticate a user
@@ -12,48 +9,22 @@ import { Label } from 'iconoir-react';
  * Read More: https://docs.world.org/mini-apps/commands/wallet-auth
  */
 export const AuthSession = () => {
-  const [isPending, setIsPending] = useState(false);
-  const { isInstalled } = useMiniKit();
-  const { data: session } = useSession();
-
-  const onClick = useCallback(async () => {
-    if (!isInstalled || isPending) {
-      return;
-    }
-    setIsPending(true);
-    try {
-      await walletAuth();
-    } catch (error) {
-      console.error('Wallet authentication button error', error);
-      setIsPending(false);
-      return;
-    }
-
-    setIsPending(false);
-  }, [isInstalled, isPending]);
-  console.log('session', session?.user.username);
-  useEffect(() => {
-    const authenticate = async () => {
-      if (isInstalled && !isPending && !session?.user) {
-        setIsPending(true);
-        try {
-          await walletAuth();
-        } catch (error) {
-          console.error('Auto wallet authentication error', error);
-        } finally {
-          setIsPending(false);
-        }
-      }
-    };
-
-    authenticate();
-  }, [isInstalled, isPending]);
+  // Fetching the user state client side
+  const session = useSession();
 
   return (
-    <TextArea
-    id="username"
-    disabled={true}
-    value={session?.user.username}
-    ></TextArea>
+    <div className="flex flex-row items-center justify-center gap-4 rounded-xl w-full border-2 border-gray-200 p-4">
+      <Marble src={session?.data?.user?.profilePictureUrl} className="w-14" />
+      <div className="flex flex-row items-center justify-center">
+        <span className="text-lg font-semibold capitalize">
+          {session?.data?.user?.username}
+        </span>
+        {session?.data?.user?.profilePictureUrl && (
+          <CircularIcon size="sm" className="ml-0">
+            <CheckCircleSolid className="text-blue-600" />
+          </CircularIcon>
+        )}
+      </div>
+    </div>
   );
 };

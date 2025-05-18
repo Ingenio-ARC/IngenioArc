@@ -4,6 +4,8 @@ import { AuthButton } from '../components/AuthButton';
 import { AuthSession } from '../components/AuthSession';
 import { Verify } from '../components/Verify';
 import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from '@worldcoin/minikit-js';
+import { BtnVerify } from '../components/BtnVerify';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ChatList from '../components/ChatList';
 
@@ -13,7 +15,7 @@ const verifyPayload: VerifyCommandInput = {
     verification_level: VerificationLevel.Device, // Orb | Device
 }
 
-const handleVerify = async () => {
+const handleVerify = async (router: ReturnType<typeof useRouter>) => {
     if (!MiniKit.isInstalled()) {
         return
     }
@@ -36,21 +38,20 @@ const handleVerify = async () => {
 
     const verifyResponseJson = await verifyResponse.json()
     if (verifyResponseJson.status === 200) {
-        console.log('Verification success!')
+        console.log('Verification success!');
+        router.push('/select_profile');
     }
 }
 
 export default function Home() {
+  const router = useRouter();
   return (
     <Page>
       <Page.Main className="flex flex-col items-center justify-center">
         <AuthSession/>
-        <button
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
-          onClick={handleVerify}
-        >
-          Verificar usuario
-        </button>
+        <div className="mt-4 w-full">
+          <BtnVerify handleVerify={() => handleVerify(router)} />
+        </div>
         <div className="mt-6">
           <ChatList />
         </div>

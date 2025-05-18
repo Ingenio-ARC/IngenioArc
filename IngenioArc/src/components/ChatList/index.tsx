@@ -36,7 +36,7 @@ const ChatList: React.FC = () => {
     fetchRole();
   }, [session]);
 
-  // Escuchar cambios en conversations y actualizar usuarios
+  // Escuchar cambios en conversations y users, y actualizar usuarios
   useEffect(() => {
     if (!role || !userId) return;
     const fetchUsers = async () => {
@@ -102,12 +102,18 @@ const ChatList: React.FC = () => {
     };
     fetchUsers();
     // Suscripción a cambios en conversations
-    const channel = supabase
+    const convChannel = supabase
       .channel('public:conversations')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, fetchUsers)
       .subscribe();
+    // Suscripción a cambios en users (alta/baja/cambio de listeners/speakers)
+    const usersChannel = supabase
+      .channel('public:users')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, fetchUsers)
+      .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(convChannel);
+      supabase.removeChannel(usersChannel);
     };
   }, [role, userId, session]);
 

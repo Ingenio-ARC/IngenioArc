@@ -2,6 +2,16 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { supabase } from '../../../lib/db';
 import { useSession } from 'next-auth/react';
+import {
+    getUserAndSpeaker,
+    getUserAndListener,
+    getExistingConversation,
+    createConversation,
+    getSpeakerConversationCount,
+    updateSpeakerConversationCount,
+    getListenerConversationCount,
+    updateListenerConversationCount,
+} from '../../services/chatService';
 
 interface Message {
     id: number;
@@ -26,86 +36,37 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
     useEffect(() => {
         const fetchUserIdAndCreateConversation = async () => {
             if (!session?.user?.username) return;
-            // Get current user id and speaker_id with a join
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select('user_id, speakers(speaker_id)')
-                .eq('world_nickname', session.user.username)
-                .single();
+
+            const { data: userData, error: userError } = await getUserAndSpeaker(session.user.username);
             if (userError || !userData) return;
             const userId = userData.user_id;
             const speakerId = userData.speakers ? userData.speakers.speaker_id : userData.speakers;
 
-            // Get chatWith user id and listener_id with a join
-            const { data: otherUserData, error: otherUserError } = await supabase
-                .from('users')
-                .select('user_id, listeners(listener_id)')
-                .eq('world_nickname', chatWith)
-                .single();
+            const { data: otherUserData, error: otherUserError } = await getUserAndListener(chatWith);
             if (otherUserError || !otherUserData) return;
             const otherUserId = otherUserData.user_id;
             const listenerId = otherUserData.listeners ? otherUserData.listeners.listener_id : otherUserData.listeners;
 
-            // Check if conversation already exists
-            const { data: existingConv, error: existingConvError } = await supabase
-                .from('conversations')
-                .select('conversation_id')
-                .eq('speaker_id', speakerId)
-                .eq('listener_id', listenerId)
-                .maybeSingle();
-
-            console.log('userId:', userId, 'otherUserId:', otherUserId);
-            console.log('speakerId:', speakerId, 'listenerId:', listenerId);
-            console.log('Existing conversation:', existingConv, 'Error:', existingConvError);
+            const { data: existingConv, error: existingConvError } = await getExistingConversation(speakerId, listenerId);
 
             if (!existingConvError && existingConv) {
                 setChatSessionId(existingConv.conversation_id);
             } else {
-                // Create new conversation
-                const { data: newConv, error: newConvError } = await supabase
-                    .from('conversations')
-                    .insert([
-                        {
-                            speaker_id: speakerId,
-                            listener_id: listenerId,
-                        },
-                    ])
-                    .select('conversation_id')
-                    .single();
-
-                console.log('New conversation:', newConv, 'Error:', newConvError);
-
+                const { data: newConv, error: newConvError } = await createConversation(speakerId, listenerId);
                 if (!newConvError && newConv) {
                     setChatSessionId(newConv.conversation_id);
                 }
             }
-            // Add 1 to the conversation_count of the speaker
-            const { data: speakerData, error: speakerError } = await supabase
-                .from('speakers')
-                .select('conversation_count')
-                .eq('user_id', userId)
-                .single();
-            if (!speakerError && speakerData) {
-                await supabase
-                    .from('speakers')
-                    .update({ conversation_count: speakerData.conversation_count + 1 })
-                    .eq('user_id', userId);
-            }
-            console.log('speakerData:', speakerData, 'speakerError:', speakerError);
 
-            // Add 1 to the conversation_count of the listener
-            const { data: listenerData, error: listenerError } = await supabase
-                .from('listeners')
-                .select('conversation_count')
-                .eq('user_id', otherUserId)
-                .single();
-            if (!listenerError && listenerData) {
-                await supabase
-                    .from('listeners')
-                    .update({ conversation_count: listenerData.conversation_count + 1 })
-                    .eq('user_id', otherUserId);
+            const { data: speakerData, error: speakerError } = await getSpeakerConversationCount(userId);
+            if (!speakerError && speakerData) {
+                await updateSpeakerConversationCount(userId, speakerData.conversation_count + 1);
             }
-            console.log('listenerData:', listenerData, 'listenerError:', listenerError);
+
+            const { data: listenerData, error: listenerError } = await getListenerConversationCount(otherUserId);
+            if (!listenerError && listenerData) {
+                await updateListenerConversationCount(otherUserId, listenerData.conversation_count + 1);
+            }
         };
         fetchUserIdAndCreateConversation();
     }, [session, chatWith]);

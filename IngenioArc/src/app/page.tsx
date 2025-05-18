@@ -38,7 +38,7 @@ const handleVerify = async (router: ReturnType<typeof useRouter>) => {
 
     const verifyResponseJson = await verifyResponse.json()
     if (verifyResponseJson.status === 200 && verifyResponseJson.redirect) {
-        console.log('Verification success!');
+        console.log('Verification resopnse:', verifyResponseJson);
         router.push(verifyResponseJson.redirect);
     } else {
         // Maneja el error si lo necesitas

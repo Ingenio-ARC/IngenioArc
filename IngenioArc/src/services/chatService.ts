@@ -87,3 +87,23 @@ export async function updateConversationStatus(conversationId: string, status: n
         .update({ status })
         .eq('conversation_id', conversationId);
 }
+
+export async function deleteConversationAndMessages(conversationId: string) {
+    // Delete all messages for this conversation
+    const { error: messagesError } = await supabase
+        .from('messages')
+        .delete()
+        .eq('conversation_id', conversationId);
+    if (messagesError) {
+        return { error: messagesError };
+    }
+    // Delete the conversation itself
+    const { error: conversationError } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('conversation_id', conversationId);
+    if (conversationError) {
+        return { error: conversationError };
+    }
+    return { error: null };
+}

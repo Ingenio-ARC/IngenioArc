@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { supabase } from '../../../lib/db';
 import { useSession } from 'next-auth/react';
+import { AuthButton } from '../AuthButton';
 import {
     getUserAndSpeaker,
     getUserAndListener,
@@ -11,8 +12,10 @@ import {
     updateSpeakerConversationCount,
     getListenerConversationCount,
     updateListenerConversationCount,
+    deleteConversationAndMessages,
 } from '../../services/chatService';
 import { Bold } from 'iconoir-react';
+import CountdownTimer from './CountdownTimer';
 
 interface Message {
     id: number;
@@ -32,6 +35,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
     const [input, setInput] = useState('');
     const [chatSessionId, setChatSessionId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    console.log('ChatBox session', session);
+
+    if (!session?.user?.username) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                <AuthButton />
+            </div>
+        );
+    }
 
     // Fetch user id and create conversation on mount
     useEffect(() => {
@@ -119,6 +132,15 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
         if (!error) setInput('');
     };
 
+    // Add a handler to close the chat and delete conversation/messages
+    const handleCloseChat = async () => {
+        if (chatSessionId) {
+            await deleteConversationAndMessages(chatSessionId);
+            setMessages([]);
+            setChatSessionId(null);
+        }
+    };
+
     return (
         <div style={{
             display: 'flex',
@@ -132,8 +154,19 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatWith }) => {
             boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
             overflow: 'hidden',
         }}>
-            <div style={{ padding: '15px 20px', fontSize: '14px', color: '#555' }}>
-                Estás conversando con: <div style={{ fontWeight: 'bold', display: 'inline-block'}}>{chatWith}</div>
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                padding: '15px 20px', 
+                fontSize: '14px', 
+                color: '#555' 
+            }}>
+                <span>
+                    Estás conversando con: <span style={{ fontWeight: 'bold', display: 'inline-block'}}>{chatWith}</span>
+                </span>
+                <CountdownTimer initialSeconds={300} />
+                <button onClick={handleCloseChat} style={{ marginLeft: 16, background: '#eee', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }}>Cerrar chat</button>
             </div>
             <div style={{
                 flex: 1,

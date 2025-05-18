@@ -37,9 +37,12 @@ const handleVerify = async (router: ReturnType<typeof useRouter>) => {
     })
 
     const verifyResponseJson = await verifyResponse.json()
-    if (verifyResponseJson.status === 200) {
+    if (verifyResponseJson.status === 200 && verifyResponseJson.redirect) {
         console.log('Verification success!');
-        router.push('/select_profile');
+        router.push(verifyResponseJson.redirect);
+    } else {
+        // Maneja el error si lo necesitas
+        alert(verifyResponseJson.error || 'Error en la verificación');
     }
 }
 

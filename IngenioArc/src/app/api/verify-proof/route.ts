@@ -15,25 +15,52 @@ export async function POST(req: NextRequest) {
 	const verifyRes = (await verifyCloudProof(payload, app_id, action, signal)) as IVerifyResponse // Wrapper on this
 
 	if (verifyRes.success) {
-		// This is where you should perform backend actions if the verification succeeds
-		// Such as, setting a user as "verified" in a database
     const session = await auth();
     const world_nickname = session?.user.username;
     console.log('world_nickname:', world_nickname);
     
 	if (typeof world_nickname === 'string' && world_nickname.length > 0) {
-		await supabase
-      .from('users')
-      .insert([{ world_nickname, created_at: new Date().toISOString() }]);
-		console.log('User added to database:', world_nickname);
-	} else {
-		console.error('Invalid world_nickname:', world_nickname);
-		return NextResponse.json({ error: 'Invalid world_nickname', status: 400 });
-	}
-		return NextResponse.json({ verifyRes, status: 200 })
-	} else {
-		// This is where you should handle errors from the World ID /verify endpoint.
-		// Usually these errors are due to a user having already verified.
-		return NextResponse.json({ verifyRes, status: 400 })
-	}
+      // 1. Buscar el usuario en la tabla users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('world_nickname', world_nickname)
+        .single();
+		  console.log(userData, userError);		
+      if (userError || !userData) {
+        return NextResponse.json({ redirect: '/select_profile', status: 200 });
+      }
+
+      const user_id = userData.user_id;
+
+      // 2. Buscar en speakers
+      const { data: speakerData } = await supabase
+        .from('speakers')
+        .select('speaker_id')
+        .eq('user_id', user_id)
+        .single();
+			console.log(userData, userError);
+      if (speakerData) {
+        return NextResponse.json({ redirect: '/main_speaker', status: 200 });
+      }
+
+      // 3. Buscar en listeners
+      const { data: listenerData } = await supabase
+        .from('listeners')
+        .select('listener_id')
+        .eq('user_id', user_id)
+        .single();
+	  	console.log(userData, userError);
+      if (listenerData) {
+        return NextResponse.json({ redirect: '/main_listener', status: 200 });
+      }
+
+      // 4. No encontrado en ninguna tabla
+      return NextResponse.json({ redirect: '/select_profile', status: 200 });
+    } else {
+      return NextResponse.json({ redirect: '/select_profile', status: 200 });
+    }
+  } else {
+    return NextResponse.json({ error: 'Verification failed', status: 400 });
+  }
 }

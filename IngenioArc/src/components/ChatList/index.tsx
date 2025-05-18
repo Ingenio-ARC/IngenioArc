@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/db';
+import { useSession } from 'next-auth/react';
 
 interface User {
   id: string;
@@ -9,14 +10,19 @@ interface User {
 }
 
 const ChatList: React.FC = () => {
+  const { data: session } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const { data, error } = await supabase
+      // Get current username from session
+      const currentUsername = session?.user?.username;
+      let query = supabase
         .from('users')
-        .select('user_id, world_nickname, created_at');
+        .select('user_id, world_nickname, created_at, listeners!inner(user_id)')
+        .neq('world_nickname', currentUsername);
+      const { data, error } = await query;
       if (!error && data) {
         setUsers(
           data.map((u: any) => ({
@@ -27,9 +33,9 @@ const ChatList: React.FC = () => {
         );
       }
     };
-    fetchUsers();
+    if (session?.user?.username) fetchUsers();
     // Optionally, poll or subscribe for real-time updates
-  }, []);
+  }, [session]);
 
   const handleUserClick = (user: User) => {
     router.push(`/chat/${user.username}`);

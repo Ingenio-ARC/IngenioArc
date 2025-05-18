@@ -1,15 +1,17 @@
-import React from 'react';
 import ChatBox from '../../../components/ChatBox';
+import { Suspense } from 'react';
 
 interface ChatPageProps {
   params: { username: string };
 }
 
-const ChatPage: React.FC<ChatPageProps> = ({ params }) => {
-  const { username } = params;
+const ChatPage = async ({ params }: ChatPageProps) => {
+  const { username } = await params;
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <ChatBox chatWith={username} />
+      <Suspense fallback={<div>Cargando chat...</div>}>
+        <ChatBox chatWith={username} />
+      </Suspense>
     </div>
   );
 };

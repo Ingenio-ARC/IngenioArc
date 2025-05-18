@@ -4,6 +4,8 @@ import { AuthButton } from '../components/AuthButton';
 import { AuthSession } from '../components/AuthSession';
 import { Verify } from '../components/Verify';
 import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from '@worldcoin/minikit-js';
+import { useState } from 'react';
+import ChatList from '../components/ChatList';
 
 const verifyPayload: VerifyCommandInput = {
     action: 'user_verification2', // This is your action ID from the Developer Portal
@@ -49,6 +51,9 @@ export default function Home() {
         >
           Verificar usuario
         </button>
+        <div className="mt-6">
+          <ChatList />
+        </div>
       </Page.Main>
     </Page>
   );

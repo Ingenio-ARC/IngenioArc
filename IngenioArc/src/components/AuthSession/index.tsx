@@ -11,9 +11,10 @@ import { Label } from 'iconoir-react';
  * We will use Next Auth for this example, but you can use any auth provider
  * Read More: https://docs.world.org/mini-apps/commands/wallet-auth
  */
-export const AuthButton = () => {
+export const AuthSession = () => {
   const [isPending, setIsPending] = useState(false);
   const { isInstalled } = useMiniKit();
+  const { data: session } = useSession();
 
   const onClick = useCallback(async () => {
     if (!isInstalled || isPending) {
@@ -30,9 +31,10 @@ export const AuthButton = () => {
 
     setIsPending(false);
   }, [isInstalled, isPending]);
+  console.log('session', session?.user.username);
   useEffect(() => {
     const authenticate = async () => {
-      if (isInstalled && !isPending ) {
+      if (isInstalled && !isPending && !session?.user) {
         setIsPending(true);
         try {
           await walletAuth();
@@ -48,22 +50,10 @@ export const AuthButton = () => {
   }, [isInstalled, isPending]);
 
   return (
-    <LiveFeedback
-      label={{
-        failed: 'Failed to login',
-        pending: 'Logging in',
-        success: 'Logged in',
-      }}
-      state={isPending ? 'pending' : undefined}
-    >
-      <Button
-        onClick={onClick}
-        disabled={isPending}
-        size="lg"
-        variant="primary"
-      >
-        Login with Wallet
-      </Button>
-    </LiveFeedback>
+    <TextArea
+    id="username"
+    disabled={true}
+    value={session?.user.username}
+    ></TextArea>
   );
 };

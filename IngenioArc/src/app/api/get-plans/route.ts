@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from('plans')
     .select('*')
-    .gt('plan_id', 1); // Solo planes con plan_id > 1
+    .gt('plan_id', 0); // Solo planes con plan_id > 1
 
   console.log('Data:', data);
   console.log('Error:', error);

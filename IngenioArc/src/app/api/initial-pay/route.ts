@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '../../../../lib/db'
 
 export async function POST(req: NextRequest) {
-	const uuid = crypto.randomUUID().replace(/-/g, '')
+    const uuid = crypto.randomUUID().replace(/-/g, '')
 
-	// TODO: Store the ID field in your database so you can verify the payment later
+    // Inserta el registro en la tabla payments solo con el payment_id
+    const { error } = await supabase
+        .from('payments')
+        .insert([{ payment_id: uuid }])
 
-	return NextResponse.json({ id: uuid })
+    if (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ id: uuid })
 }

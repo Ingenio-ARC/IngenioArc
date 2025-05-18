@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { AuthSession } from '../../components/AuthSession';
+import ChatList from '../../components/ChatList';
 
 export default function MainListener() {
   return (
@@ -8,6 +9,7 @@ export default function MainListener() {
       <AuthSession />
       <h1 className="text-4xl font-bold mb-4">¡Bienvenido Listener!</h1>
       <p className="text-lg">Esperando conversaciones...</p>
+      <ChatList />
     </div>
   );
 }

@@ -72,23 +72,20 @@ const ChatList: React.FC = () => {
           setUsers(filtered);
         }
       } else if (role === 'listener') {
-        // Los listeners ven speakers con conversación status=1 donde ellos son el listener
+        // Los listeners ven todos los speakers menos los que están en un chat con status=2
         const { data: convs } = await supabase
           .from('conversations')
           .select('speaker_id')
-          .eq('listener_id', userId)
-          .eq('status', 1);
-        const speakerIds = (convs || []).map((c: any) => c.speaker_id);
-        if (speakerIds.length === 0) {
-          setUsers([]);
-          return;
-        }
-        const { data, error } = await query.in('user_id', speakerIds);
+          .eq('status', 2);
+        const busySpeakerIds = (convs || []).map((c: any) => c.speaker_id);
+        query = query.neq('world_nickname', session?.user?.username);
+        // Solo mostrar usuarios que sean speakers y no estén ocupados
+        const { data, error } = await query;
         if (!error && data) {
           const filtered = [];
           for (const u of data) {
             const res = await getUserAndSpeaker(u.world_nickname);
-            if (res.data && res.data.speakers) {
+            if (res.data && res.data.speakers && !busySpeakerIds.includes(u.user_id)) {
               filtered.push({
                 id: u.user_id,
                 username: u.world_nickname,

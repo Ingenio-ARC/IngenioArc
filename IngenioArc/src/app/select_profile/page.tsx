@@ -3,6 +3,21 @@ import React from 'react';
 import { AuthSession } from '../../components/AuthSession';
 
 export default function SelectProfile() {
+  // Función para llamar al backend
+  const handleCreateUser = async (role: 'listener' | 'speaker') => {
+    const res = await fetch('/api/CreateUser', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    });
+    const data = await res.json();
+    if (data.status === 200) {
+      // Aquí puedes redirigir o mostrar un mensaje de éxito
+      alert(`Usuario creado como ${role}`);
+    } else {
+      alert(data.error || 'Error al crear usuario');
+    }
+  };
   return (
     <div className="flex flex-col items-center min-h-screen gap-6 pt-8">
       <AuthSession />
@@ -26,6 +41,7 @@ export default function SelectProfile() {
       {/* Botón Listener */}
       <button
         className="flex flex-row items-center justify-center gap-4 rounded-xl w-full max-w-md border-2 border-gray-200 p-4 bg-white hover:bg-gray-100 transition-colors"
+        onClick={() => handleCreateUser('listener')}
       >
         <span className="text-lg font-semibold capitalize">Listener</span>
       </button>
@@ -33,6 +49,7 @@ export default function SelectProfile() {
       {/* Botón Speaker */}
       <button
         className="flex flex-row items-center justify-center gap-4 rounded-xl w-full max-w-md border-2 border-gray-200 p-4 bg-white hover:bg-gray-100 transition-colors"
+        onClick={() => handleCreateUser('speaker')}
       >
         <span className="text-lg font-semibold capitalize">Speaker</span>
       </button>

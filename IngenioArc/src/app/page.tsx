@@ -7,7 +7,7 @@ import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from '
 import { BtnVerify } from '../components/BtnVerify';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import ChatList from '../components/ChatList';
+
 
 const verifyPayload: VerifyCommandInput = {
     action: 'user_verification2', // This is your action ID from the Developer Portal
@@ -56,7 +56,6 @@ export default function Home() {
           <BtnVerify handleVerify={() => handleVerify(router)} />
         </div>
         <div className="mt-6">
-          <ChatList />
         </div>
       </Page.Main>
     </Page>

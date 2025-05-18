@@ -16,6 +16,24 @@ export async function getUserAndListener(username: string) {
         .single();
 }
 
+export async function getSpeakerIdByUserId(userId: string) {
+    const { data, error } = await supabase
+        .from('speakers')
+        .select('speaker_id')
+        .eq('user_id', userId)
+        .single();
+    return { speakerId: data?.speaker_id, error };
+}
+
+export async function getListenerIdByUserId(userId: string) {
+    const { data, error } = await supabase
+        .from('listeners')
+        .select('listener_id')
+        .eq('user_id', userId)
+        .single();
+    return { listenerId: data?.listener_id, error };
+}
+
 export async function getExistingConversation(speakerId: string, listenerId: string) {
     return await supabase
         .from('conversations')
@@ -25,40 +43,47 @@ export async function getExistingConversation(speakerId: string, listenerId: str
         .maybeSingle();
 }
 
-export async function createConversation(speakerId: string, listenerId: string) {
+export async function createConversation(speakerId: string, listenerId: string, status: number = 1) {
     return await supabase
         .from('conversations')
-        .insert([{ speaker_id: speakerId, listener_id: listenerId }])
+        .insert([{ speaker_id: speakerId, listener_id: listenerId, status }])
         .select('conversation_id')
         .single();
 }
 
-export async function getSpeakerConversationCount(userId: string) {
+export async function getSpeakerConversationCount(speakerId: string) {
     return await supabase
         .from('speakers')
         .select('conversation_count')
-        .eq('user_id', userId)
+        .eq('speaker_id', speakerId)
         .single();
 }
 
-export async function updateSpeakerConversationCount(userId: string, newCount: number) {
+export async function updateSpeakerConversationCount(speakerId: string, newCount: number) {
     return await supabase
         .from('speakers')
         .update({ conversation_count: newCount })
-        .eq('user_id', userId);
+        .eq('speaker_id', speakerId);
 }
 
-export async function getListenerConversationCount(userId: string) {
+export async function getListenerConversationCount(listenerId: string) {
     return await supabase
         .from('listeners')
         .select('conversation_count')
-        .eq('user_id', userId)
+        .eq('listener_id', listenerId)
         .single();
 }
 
-export async function updateListenerConversationCount(userId: string, newCount: number) {
+export async function updateListenerConversationCount(listenerId: string, newCount: number) {
     return await supabase
         .from('listeners')
         .update({ conversation_count: newCount })
-        .eq('user_id', userId);
+        .eq('listener_id', listenerId);
+}
+
+export async function updateConversationStatus(conversationId: string, status: number) {
+    return await supabase
+        .from('conversations')
+        .update({ status })
+        .eq('conversation_id', conversationId);
 }
